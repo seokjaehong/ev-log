@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "EV LOG",
+    "slug": "ev-log",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "EV LOG",
+      "shortName": "EV LOG",
+      "lang": "ko",
+      "scope": "/",
+      "themeColor": "#1fb28a",
+      "description": "전기차 충전 기록 관리 앱",
+      "orientation": "portrait",
+      "display": "standalone",
+      "startUrl": ".",
+      "backgroundColor": "#0f1419"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "이 앱은 충전 영수증을 스캔하기 위해 사진에 접근합니다.",
+          "cameraPermission": "이 앱은 충전 영수증을 촬영하기 위해 카메라에 접근합니다."
+        }
+      ]
+    ]
+  }
+}
