@@ -25,10 +25,14 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
 
 # macOS
 .DS_Store
 *.pem
+
+# Windows
+Thumbs.db
 
 # local env files
 .env
@@ -40,3 +44,29 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Vercel
+.vercel
+
+# Claude Code
+.claude/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Reference files (개발 참조용 파일)
+Google Gemini_files/
+refer_image/

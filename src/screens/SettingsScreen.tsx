@@ -7,10 +7,13 @@ import {
   SafeAreaView,
   ScrollView,
   Switch,
+  Platform,
+  Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, Vehicle } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { getVehicle } from '../utils/storage';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<
@@ -24,6 +27,7 @@ interface SettingsScreenProps {
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { theme, colors, toggleTheme } = useTheme();
+  const { user, signOut } = useAuth();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
@@ -46,6 +50,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
     navigation.navigate('VehicleSettings');
   };
 
+  const handleLogout = async () => {
+    const confirmLogout = async () => {
+      try {
+        await signOut();
+      } catch (error) {
+        console.error('[SettingsScreen] Logout error:', error);
+        if (Platform.OS === 'web') {
+          window.alert('로그아웃 중 오류가 발생했습니다.');
+        } else {
+          Alert.alert('오류', '로그아웃 중 오류가 발생했습니다.');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('로그아웃하시겠습니까?')) {
+        await confirmLogout();
+      }
+    } else {
+      Alert.alert(
+        '로그아웃',
+        '로그아웃하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '로그아웃', onPress: confirmLogout },
+        ]
+      );
+    }
+  };
+
   const styles = createStyles(colors);
   const isDark = theme === 'dark';
 
@@ -60,6 +94,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       </View>
 
       <ScrollView style={styles.content}>
+        {/* 계정 섹션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>계정</Text>
+          <View style={styles.accountCard}>
+            <View style={styles.accountInfo}>
+              <Text style={styles.accountLabel}>로그인 계정</Text>
+              <Text style={styles.accountEmail}>{user?.email || '알 수 없음'}</Text>
+            </View>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.logoutButtonText}>로그아웃</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* 테마 섹션 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>테마</Text>
@@ -230,6 +278,36 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 8,
   },
   registerButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  accountCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 20,
+  },
+  accountInfo: {
+    marginBottom: 16,
+  },
+  accountLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  accountEmail: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  logoutButton: {
+    marginTop: 8,
+    backgroundColor: colors.error,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',

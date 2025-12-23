@@ -65,8 +65,12 @@ export interface ParsedReceipt {
   rawText: string;        // 원본 텍스트
 }
 
+// Supabase 타입
+export type { User, Session } from '@supabase/supabase-js';
+
 // 네비게이션 파라미터 타입
 export type RootStackParamList = {
+  Login: undefined;
   Home: undefined;
   AddCharge: { editRecord?: ChargeRecord };
   Settings: undefined;

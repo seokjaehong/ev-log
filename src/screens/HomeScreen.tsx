@@ -35,14 +35,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadRecords = async () => {
-    console.log('[HomeScreen] 기록 로드 중...');
-    const loadedRecords = await getChargeRecords();
-    console.log('[HomeScreen] 로드된 기록 개수:', loadedRecords.length);
-    if (loadedRecords.length > 0) {
-      console.log('[HomeScreen] 최신 기록:', loadedRecords[0]);
+    try {
+      console.log('[HomeScreen] 기록 로드 중...');
+      const loadedRecords = await getChargeRecords();
+      console.log('[HomeScreen] 로드된 기록 개수:', loadedRecords.length);
+      if (loadedRecords.length > 0) {
+        console.log('[HomeScreen] 최신 기록:', loadedRecords[0]);
+      }
+      setRecords(loadedRecords);
+      console.log('[HomeScreen] 상태 업데이트 완료');
+    } catch (error) {
+      console.error('[HomeScreen] 로드 실패:', error);
+      // 에러 발생 시 빈 배열로 설정
+      setRecords([]);
     }
-    setRecords(loadedRecords);
-    console.log('[HomeScreen] 상태 업데이트 완료');
   };
 
   useFocusEffect(

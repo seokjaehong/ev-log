@@ -1,46 +1,85 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChargeRecord, MonthlySummary, ThemeMode, Vehicle } from '../types';
+import { supabase } from '../lib/supabase';
+import {
+  transformChargeRecordFromDB,
+  transformChargeRecordToDB,
+  transformVehicleFromDB,
+  transformVehicleToDB,
+} from './supabaseHelpers';
 
-const STORAGE_KEY = '@ev_log_charges';
+// AsyncStorage 키 (테마는 로컬 저장 유지)
 const THEME_KEY = '@ev_log_theme';
-const VEHICLE_KEY = '@ev_log_vehicle';
+
+// === 충전 기록 관련 함수 (Supabase 사용) ===
 
 // 모든 충전 기록 가져오기
 export const getChargeRecords = async (): Promise<ChargeRecord[]> => {
   try {
-    const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-    return jsonValue != null ? JSON.parse(jsonValue) : [];
+    console.log('[Storage] Loading charge records from Supabase...');
+    const { data, error } = await supabase
+      .from('charge_records')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('[Storage] Error loading charge records:', error);
+      throw error;
+    }
+
+    console.log('[Storage] Loaded', data?.length || 0, 'charge records');
+    return data ? data.map(transformChargeRecordFromDB) : [];
   } catch (e) {
-    console.error('Error reading charge records:', e);
-    return [];
+    console.error('[Storage] Error reading charge records:', e);
+    throw e;
   }
 };
 
 // 충전 기록 저장하기
 export const saveChargeRecord = async (record: ChargeRecord): Promise<void> => {
   try {
-    console.log('[Storage] 저장 시작...');
-    const records = await getChargeRecords();
-    console.log('[Storage] 기존 기록 개수:', records.length);
+    console.log('[Storage] Saving charge record to Supabase...');
 
-    const existingIndex = records.findIndex((r) => r.id === record.id);
-
-    if (existingIndex >= 0) {
-      console.log('[Storage] 기존 기록 업데이트 (index:', existingIndex, ')');
-      records[existingIndex] = record;
-    } else {
-      console.log('[Storage] 새 기록 추가');
-      records.push(record);
+    // 현재 로그인한 사용자 ID 가져오기
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('로그인이 필요합니다.');
     }
 
-    // 날짜 역순으로 정렬 (최신순)
-    records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    console.log('[Storage] 정렬 완료, 총', records.length, '개');
+    const dbRecord = transformChargeRecordToDB(record);
 
-    const jsonValue = JSON.stringify(records);
-    await AsyncStorage.setItem(STORAGE_KEY, jsonValue);
-    console.log('[Storage] AsyncStorage에 저장 완료');
-    console.log('[Storage] 저장된 데이터 크기:', jsonValue.length, 'bytes');
+    // ID가 UUID 형식인지 확인 (업데이트 vs 삽입)
+    const isUpdate = record.id && record.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+
+    if (isUpdate) {
+      // 업데이트
+      console.log('[Storage] Updating existing record:', record.id);
+      const { error } = await supabase
+        .from('charge_records')
+        .update(dbRecord)
+        .eq('id', record.id);
+
+      if (error) {
+        console.error('[Storage] Error updating charge record:', error);
+        throw error;
+      }
+    } else {
+      // 삽입 - user_id 추가!
+      console.log('[Storage] Inserting new record for user:', user.id);
+      const { error } = await supabase
+        .from('charge_records')
+        .insert([{
+          ...dbRecord,
+          user_id: user.id,  // 중요: user_id 명시적으로 추가!
+        }]);
+
+      if (error) {
+        console.error('[Storage] Error inserting charge record:', error);
+        throw error;
+      }
+    }
+
+    console.log('[Storage] Charge record saved successfully');
   } catch (e) {
     console.error('[Storage] Error saving charge record:', e);
     throw e;
@@ -50,17 +89,162 @@ export const saveChargeRecord = async (record: ChargeRecord): Promise<void> => {
 // 충전 기록 삭제하기
 export const deleteChargeRecord = async (id: string): Promise<void> => {
   try {
-    const records = await getChargeRecords();
-    const filteredRecords = records.filter((r) => r.id !== id);
-    const jsonValue = JSON.stringify(filteredRecords);
-    await AsyncStorage.setItem(STORAGE_KEY, jsonValue);
+    console.log('[Storage] Deleting charge record from Supabase:', id);
+    const { error } = await supabase
+      .from('charge_records')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('[Storage] Error deleting charge record:', error);
+      throw error;
+    }
+
+    console.log('[Storage] Charge record deleted successfully');
   } catch (e) {
-    console.error('Error deleting charge record:', e);
+    console.error('[Storage] Error deleting charge record:', e);
     throw e;
   }
 };
 
-// 월별 통계 계산
+// === 차량 정보 관련 함수 (Supabase 사용) ===
+
+// 차량 정보 가져오기
+export const getVehicle = async (): Promise<Vehicle | null> => {
+  try {
+    console.log('[Storage] Loading vehicle from Supabase...');
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select('*')
+      .limit(1)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        console.log('[Storage] No vehicle found');
+        return null;
+      }
+      console.error('[Storage] Error loading vehicle:', error);
+      throw error;
+    }
+
+    console.log('[Storage] Vehicle loaded successfully');
+    return data ? transformVehicleFromDB(data) : null;
+  } catch (e: any) {
+    if (e.code === 'PGRST116') {
+      return null;
+    }
+    console.error('[Storage] Error reading vehicle:', e);
+    throw e;
+  }
+};
+
+// 차량 정보 저장하기
+export const saveVehicle = async (vehicle: Vehicle): Promise<void> => {
+  try {
+    console.log('[Storage] Saving vehicle to Supabase...');
+
+    // 현재 로그인한 사용자 ID 가져오기
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const dbVehicle = transformVehicleToDB(vehicle);
+
+    // 기존 차량이 있는지 확인
+    const existing = await getVehicle();
+
+    if (existing) {
+      // 업데이트
+      console.log('[Storage] Updating existing vehicle');
+      const { error } = await supabase
+        .from('vehicles')
+        .update(dbVehicle)
+        .eq('id', existing.id);
+
+      if (error) {
+        console.error('[Storage] Error updating vehicle:', error);
+        throw error;
+      }
+    } else {
+      // 삽입 - user_id 추가!
+      console.log('[Storage] Inserting new vehicle for user:', user.id);
+      const { error } = await supabase
+        .from('vehicles')
+        .insert([{
+          ...dbVehicle,
+          user_id: user.id,  // 중요: user_id 명시적으로 추가!
+        }]);
+
+      if (error) {
+        console.error('[Storage] Error inserting vehicle:', error);
+        throw error;
+      }
+    }
+
+    console.log('[Storage] Vehicle saved successfully');
+  } catch (e) {
+    console.error('[Storage] Error saving vehicle:', e);
+    throw e;
+  }
+};
+
+// 차량 정보 삭제하기
+export const deleteVehicle = async (): Promise<void> => {
+  try {
+    console.log('[Storage] Deleting vehicle from Supabase...');
+
+    const existing = await getVehicle();
+    if (!existing) {
+      console.log('[Storage] No vehicle to delete');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('vehicles')
+      .delete()
+      .eq('id', existing.id);
+
+    if (error) {
+      console.error('[Storage] Error deleting vehicle:', error);
+      throw error;
+    }
+
+    console.log('[Storage] Vehicle deleted successfully');
+  } catch (e) {
+    console.error('[Storage] Error deleting vehicle:', e);
+    throw e;
+  }
+};
+
+// === 테마 관련 함수 (AsyncStorage 유지 - 로컬 설정) ===
+
+// 테마 가져오기
+export const getTheme = async (): Promise<ThemeMode> => {
+  try {
+    const theme = await AsyncStorage.getItem(THEME_KEY);
+    return (theme as ThemeMode) || 'dark';
+  } catch (e) {
+    console.error('Error reading theme:', e);
+    return 'dark';
+  }
+};
+
+// 테마 저장하기
+export const saveTheme = async (theme: ThemeMode): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(THEME_KEY, theme);
+  } catch (e) {
+    console.error('Error saving theme:', e);
+    throw e;
+  }
+};
+
+// === 유틸리티 함수 ===
+
+// 월별 통계 계산 (클라이언트 측 계산)
 export const calculateMonthlySummary = (
   records: ChargeRecord[],
   year: number,
@@ -85,57 +269,7 @@ export const calculateMonthlySummary = (
   };
 };
 
-// UUID 생성 (간단한 버전)
+// UUID 생성 (클라이언트 측 임시 ID - Supabase가 자동 생성)
 export const generateId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
-
-// 테마 관련 함수
-export const getTheme = async (): Promise<ThemeMode> => {
-  try {
-    const theme = await AsyncStorage.getItem(THEME_KEY);
-    return (theme as ThemeMode) || 'dark';
-  } catch (e) {
-    console.error('Error reading theme:', e);
-    return 'dark';
-  }
-};
-
-export const saveTheme = async (theme: ThemeMode): Promise<void> => {
-  try {
-    await AsyncStorage.setItem(THEME_KEY, theme);
-  } catch (e) {
-    console.error('Error saving theme:', e);
-    throw e;
-  }
-};
-
-// 차량 정보 관련 함수
-export const getVehicle = async (): Promise<Vehicle | null> => {
-  try {
-    const jsonValue = await AsyncStorage.getItem(VEHICLE_KEY);
-    return jsonValue != null ? JSON.parse(jsonValue) : null;
-  } catch (e) {
-    console.error('Error reading vehicle:', e);
-    return null;
-  }
-};
-
-export const saveVehicle = async (vehicle: Vehicle): Promise<void> => {
-  try {
-    const jsonValue = JSON.stringify(vehicle);
-    await AsyncStorage.setItem(VEHICLE_KEY, jsonValue);
-  } catch (e) {
-    console.error('Error saving vehicle:', e);
-    throw e;
-  }
-};
-
-export const deleteVehicle = async (): Promise<void> => {
-  try {
-    await AsyncStorage.removeItem(VEHICLE_KEY);
-  } catch (e) {
-    console.error('Error deleting vehicle:', e);
-    throw e;
-  }
+  return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
