@@ -87,23 +87,52 @@ npm run build:web
 vercel deploy --prod
 ```
 
-## 환경 변수 설정 (필요시)
+## 환경 변수 설정 (필수)
 
-현재 EV LOG는 환경 변수가 필요하지 않지만, 향후 필요한 경우:
+**중요**: EV LOG는 Supabase 인증을 사용하므로 환경 변수 설정이 필수입니다.
 
-### Vercel Dashboard에서 설정
-1. 프로젝트 → Settings → Environment Variables
-2. 변수 추가 (예: API_KEY)
-3. 재배포
+### 필수 환경 변수
+- `EXPO_PUBLIC_SUPABASE_URL`: Supabase 프로젝트 URL
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon public key
+
+### Vercel Dashboard에서 설정 (권장)
+1. [vercel.com/dashboard](https://vercel.com/dashboard) 접속
+2. 프로젝트 선택
+3. Settings → Environment Variables 클릭
+4. 다음 변수 추가:
+
+   **Name**: `EXPO_PUBLIC_SUPABASE_URL`
+   **Value**: (Supabase Dashboard > Settings > API에서 복사)
+   **Environments**: Production, Preview, Development 모두 체크
+
+   **Name**: `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+   **Value**: (Supabase Dashboard > Settings > API에서 "anon public" 키 복사)
+   **Environments**: Production, Preview, Development 모두 체크
+
+5. "Save" 클릭
+6. 프로젝트 재배포 (Deployments → 최신 배포 → "Redeploy")
 
 ### CLI에서 설정
 ```bash
-vercel env add API_KEY production
+vercel env add EXPO_PUBLIC_SUPABASE_URL production
+# 프롬프트에서 값 입력
+
+vercel env add EXPO_PUBLIC_SUPABASE_ANON_KEY production
+# 프롬프트에서 값 입력
 ```
+
+### Supabase 설정 확인
+환경 변수를 찾는 방법:
+1. https://app.supabase.com 접속
+2. 프로젝트 선택
+3. Settings → API 클릭
+4. "Project URL" 복사 → `EXPO_PUBLIC_SUPABASE_URL`
+5. "Project API keys" → "anon public" 복사 → `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
 ## 배포 후 확인사항
 
 ### 1. 기능 테스트
+- [ ] 로그인 (Supabase 인증)
 - [ ] 홈 화면 로딩
 - [ ] 충전 기록 추가
 - [ ] 충전 기록 수정
@@ -112,7 +141,9 @@ vercel env add API_KEY production
 - [ ] 다크/라이트 테마 전환
 - [ ] 차량 정보 등록
 - [ ] OCR 영수증 스캔 (Tesseract.js)
-- [ ] 데이터 새로고침 후에도 유지 (LocalStorage)
+- [ ] 로그아웃
+- [ ] 데이터 새로고침 후에도 유지 (Supabase)
+- [ ] 사용자별 데이터 격리 (다른 계정으로 로그인 시 데이터 안 보임)
 
 ### 2. 모바일 최적화 확인
 - 모바일 기기에서 접속
