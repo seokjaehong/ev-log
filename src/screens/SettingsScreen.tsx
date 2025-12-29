@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import Constants from 'expo-constants';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, Vehicle } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
@@ -24,6 +25,9 @@ type SettingsScreenNavigationProp = NativeStackNavigationProp<
 interface SettingsScreenProps {
   navigation: SettingsScreenNavigationProp;
 }
+
+const APP_NAME = 'EV LOG';
+const COMPANY_NAME = '주식회사 티핑포인트';
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { theme, colors, toggleTheme } = useTheme();
@@ -173,6 +177,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           )}
         </View>
 
+        {/* Footer: 앱 정보 */}
+        <View style={styles.footerContainer}>
+          <Text style={styles.appVersion}>
+            {APP_NAME} v{Constants.expoConfig?.version || '1.0.0'}
+          </Text>
+          <Text style={styles.companyInfo}>
+            © {new Date().getFullYear()} {COMPANY_NAME}
+          </Text>
+        </View>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -311,5 +325,21 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  footerContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    marginTop: 8,
+  },
+  appVersion: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  companyInfo: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    fontWeight: '400',
   },
 });
