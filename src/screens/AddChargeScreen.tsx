@@ -16,7 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList, ChargerType, ThemeColors, ParsedReceipt } from '../types';
+import { RootStackParamList, ChargerType, ThemeColors, ParsedReceipt, ChargeRecordAnalysis } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import {
   saveChargeRecord,
@@ -26,6 +26,7 @@ import {
 import { pickImageFromCamera, pickImageFromLibrary } from '../utils/imagePickerUtils';
 import { performOCR } from '../services/ocrService';
 import { parseReceipt } from '../utils/receiptParser';
+import { analyzeChargingReceipt } from '../services/visionService';
 import { ScanResultModal } from '../components/ScanResultModal';
 
 type AddChargeScreenNavigationProp = NativeStackNavigationProp<
@@ -69,23 +70,13 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
   const [showScanResult, setShowScanResult] = useState(false);
   const [scannedImageUri, setScannedImageUri] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedReceipt | null>(null);
+  const [visionAnalysis, setVisionAnalysis] = useState<ChargeRecordAnalysis | null>(null);
 
   const totalCost = Math.round(chargeAmount * unitPrice);
   const styles = createStyles(colors);
 
   const handleSave = async () => {
-    console.log('=== 저장 시작 ===');
-    console.log('입력 데이터:', {
-      location,
-      chargerType,
-      chargeAmount,
-      unitPrice,
-      totalCost,
-      batteryPercent,
-    });
-
     if (!location.trim()) {
-      console.log('❌ 검증 실패: 장소가 비어있음');
       if (Platform.OS === 'web') {
         window.alert('장소를 입력해주세요.');
       } else {
@@ -106,10 +97,7 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
         batteryPercent: batteryPercent ? parseInt(batteryPercent, 10) : undefined,
       };
 
-      console.log('저장할 기록:', record);
       await saveChargeRecord(record);
-      console.log('✅ 저장 완료!');
-      console.log('=== 저장 성공 ===');
 
       navigation.goBack();
     } catch (error) {
@@ -155,11 +143,8 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
 
   // OCR 스캔 시작
   const handleScanReceipt = () => {
-    console.log('영수증 스캔 버튼 클릭, Platform:', Platform.OS);
-
     // 웹에서는 Alert.alert가 여러 버튼을 지원하지 않으므로 바로 파일 선택
     if (Platform.OS === 'web') {
-      console.log('웹 환경 - 바로 파일 선택으로 이동');
       handleImagePick('library');
       return;
     }
@@ -179,12 +164,10 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
 
   // 이미지 선택 및 OCR 처리
   const handleImagePick = async (source: 'camera' | 'library') => {
-    console.log('이미지 선택 시작:', source);
     setIsScanning(true);
 
     try {
       // 1. 이미지 선택
-      console.log('이미지 선택 중...');
       let imageUri: string | null = null;
 
       if (source === 'camera') {
@@ -193,29 +176,139 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
         imageUri = await pickImageFromLibrary();
       }
 
-      console.log('선택된 이미지 URI:', imageUri);
-
       if (!imageUri) {
-        console.log('이미지 선택 취소됨');
         setIsScanning(false);
         return;
       }
 
       setScannedImageUri(imageUri);
 
-      // 2. OCR 수행
-      console.log('OCR 시작...');
-      const ocrResult = await performOCR(imageUri);
-      console.log('OCR 완료:', ocrResult.fullText?.substring(0, 100));
+      // 2. Gemini Vision API로 이미지 분석
+      const analysis = await analyzeChargingReceipt(imageUri);
+      setVisionAnalysis(analysis);
 
-      // 3. 텍스트 파싱
-      console.log('텍스트 파싱 중...');
-      const parsed = parseReceipt(ocrResult.fullText);
-      console.log('파싱 결과:', parsed);
-      setParsedData(parsed);
+      // 3. 이미지 유효성 검사
+      if (!analysis.isValid) {
+        if (Platform.OS === 'web') {
+          window.alert(
+            `유효하지 않은 이미지입니다\n\n${analysis.reasoning}\n\n충전기 화면이나 충전 영수증 이미지를 선택해주세요.`
+          );
+        } else {
+          Alert.alert(
+            '유효하지 않은 이미지',
+            `${analysis.reasoning}\n\n충전기 화면이나 충전 영수증 이미지를 선택해주세요.`
+          );
+        }
+        return;
+      }
 
-      // 4. 결과 모달 표시
-      console.log('결과 모달 표시');
+      // 4. 충전 상태 확인
+      if (analysis.chargingStatus === 'in_progress') {
+        if (Platform.OS === 'web') {
+          window.alert(
+            `충전이 아직 진행 중입니다\n\n${analysis.reasoning}\n\n충전이 완료된 후 다시 촬영해주세요.`
+          );
+        } else {
+          Alert.alert(
+            '충전 진행 중',
+            `${analysis.reasoning}\n\n충전이 완료된 후 다시 촬영해주세요.`
+          );
+        }
+        return;
+      }
+
+      // 5. 날짜 정보 확인 및 사용자 확인
+      let finalDate: Date | undefined = undefined;
+
+      if (analysis.date) {
+        // 영수증에 날짜 정보가 있는 경우 - 사용자에게 확인
+        const extractedDate = new Date(analysis.date);
+        const dateString = extractedDate.toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        // 사용자에게 날짜 확인
+        const confirmDate = await new Promise<boolean>((resolve) => {
+          if (Platform.OS === 'web') {
+            const result = window.confirm(
+              `영수증에서 다음 날짜를 인식했습니다:\n\n📅 ${dateString}\n\n이 날짜가 맞나요?\n\n"취소"를 선택하면 직접 수정할 수 있습니다.`
+            );
+            resolve(result);
+          } else {
+            Alert.alert(
+              '날짜 확인',
+              `영수증에서 다음 날짜를 인식했습니다:\n\n${dateString}\n\n이 날짜가 맞나요?`,
+              [
+                {
+                  text: '직접 수정',
+                  style: 'cancel',
+                  onPress: () => resolve(false),
+                },
+                {
+                  text: '확인',
+                  onPress: () => resolve(true),
+                },
+              ]
+            );
+          }
+        });
+
+        if (confirmDate) {
+          finalDate = extractedDate;
+        }
+        // confirmDate가 false이면 finalDate는 undefined로 남겨서 사용자가 직접 입력하게 함
+      } else {
+        // 날짜 정보가 없는 경우 - 사용자에게 확인
+
+        const useCurrentDate = await new Promise<boolean>((resolve) => {
+          if (Platform.OS === 'web') {
+            const result = window.confirm(
+              '영수증에서 날짜 정보를 찾을 수 없습니다.\n\n현재 날짜를 사용하시겠습니까?\n\n"취소"를 선택하면 직접 입력할 수 있습니다.'
+            );
+            resolve(result);
+          } else {
+            Alert.alert(
+              '날짜 정보 없음',
+              '영수증에서 날짜 정보를 찾을 수 없습니다.\n\n현재 날짜를 사용하시겠습니까?',
+              [
+                {
+                  text: '직접 입력',
+                  style: 'cancel',
+                  onPress: () => resolve(false),
+                },
+                {
+                  text: '현재 날짜 사용',
+                  onPress: () => resolve(true),
+                },
+              ]
+            );
+          }
+        });
+
+        if (useCurrentDate) {
+          finalDate = new Date();
+        }
+        // useCurrentDate가 false이면 finalDate는 undefined로 남겨서 사용자가 직접 입력하게 함
+      }
+
+      // 6. Vision 분석 결과를 ParsedReceipt 형식으로 변환 (모달 호환성)
+      const parsedFromVision: ParsedReceipt = {
+        date: finalDate,
+        location: analysis.location,
+        chargeAmount: analysis.chargeAmount,
+        unitPrice: analysis.unitPrice,
+        totalCost: analysis.totalCost,
+        chargerType: analysis.chargerType !== 'unknown' ? analysis.chargerType : undefined,
+        confidence: analysis.confidence,
+        rawText: analysis.reasoning, // 분석 이유를 rawText로 표시
+      };
+      setParsedData(parsedFromVision);
+
+      // 7. 결과 모달 표시
       setShowScanResult(true);
     } catch (error: any) {
       console.error('OCR 오류:', error);
@@ -256,6 +349,11 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
       setUnitPrice(parsedData.unitPrice);
     }
 
+    // Vision 분석에서 배터리 퍼센트가 있으면 적용
+    if (visionAnalysis?.batteryPercent) {
+      setBatteryPercent(visionAnalysis.batteryPercent.toString());
+    }
+
     setShowScanResult(false);
 
     if (Platform.OS === 'web') {
@@ -269,6 +367,7 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
   const handleRetryScan = () => {
     setShowScanResult(false);
     setParsedData(null);
+    setVisionAnalysis(null);
     setScannedImageUri(null);
     handleScanReceipt();
   };
@@ -277,6 +376,7 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
   const handleCloseScanResult = () => {
     setShowScanResult(false);
     setParsedData(null);
+    setVisionAnalysis(null);
     setScannedImageUri(null);
   };
 

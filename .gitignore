@@ -70,3 +70,10 @@ coverage/
 # Reference files (개발 참조용 파일)
 Google Gemini_files/
 refer_image/
+
+# Test images and OCR data files (루트 디렉토리)
+/*.jpg
+/*.JPG
+/*.png
+/*.PNG
+/*.traineddata

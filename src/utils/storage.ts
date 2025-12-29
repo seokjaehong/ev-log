@@ -16,7 +16,6 @@ const THEME_KEY = '@ev_log_theme';
 // 모든 충전 기록 가져오기
 export const getChargeRecords = async (): Promise<ChargeRecord[]> => {
   try {
-    console.log('[Storage] Loading charge records from Supabase...');
     const { data, error } = await supabase
       .from('charge_records')
       .select('*')
@@ -27,7 +26,6 @@ export const getChargeRecords = async (): Promise<ChargeRecord[]> => {
       throw error;
     }
 
-    console.log('[Storage] Loaded', data?.length || 0, 'charge records');
     return data ? data.map(transformChargeRecordFromDB) : [];
   } catch (e) {
     console.error('[Storage] Error reading charge records:', e);
@@ -38,7 +36,6 @@ export const getChargeRecords = async (): Promise<ChargeRecord[]> => {
 // 충전 기록 저장하기
 export const saveChargeRecord = async (record: ChargeRecord): Promise<void> => {
   try {
-    console.log('[Storage] Saving charge record to Supabase...');
 
     // 현재 로그인한 사용자 ID 가져오기
     const { data: { user } } = await supabase.auth.getUser();
@@ -53,7 +50,6 @@ export const saveChargeRecord = async (record: ChargeRecord): Promise<void> => {
 
     if (isUpdate) {
       // 업데이트
-      console.log('[Storage] Updating existing record:', record.id);
       const { error } = await supabase
         .from('charge_records')
         .update(dbRecord)
@@ -65,7 +61,6 @@ export const saveChargeRecord = async (record: ChargeRecord): Promise<void> => {
       }
     } else {
       // 삽입 - user_id 추가!
-      console.log('[Storage] Inserting new record for user:', user.id);
       const { error } = await supabase
         .from('charge_records')
         .insert([{
@@ -79,7 +74,6 @@ export const saveChargeRecord = async (record: ChargeRecord): Promise<void> => {
       }
     }
 
-    console.log('[Storage] Charge record saved successfully');
   } catch (e) {
     console.error('[Storage] Error saving charge record:', e);
     throw e;
@@ -89,7 +83,6 @@ export const saveChargeRecord = async (record: ChargeRecord): Promise<void> => {
 // 충전 기록 삭제하기
 export const deleteChargeRecord = async (id: string): Promise<void> => {
   try {
-    console.log('[Storage] Deleting charge record from Supabase:', id);
     const { error } = await supabase
       .from('charge_records')
       .delete()
@@ -100,7 +93,6 @@ export const deleteChargeRecord = async (id: string): Promise<void> => {
       throw error;
     }
 
-    console.log('[Storage] Charge record deleted successfully');
   } catch (e) {
     console.error('[Storage] Error deleting charge record:', e);
     throw e;
@@ -112,7 +104,6 @@ export const deleteChargeRecord = async (id: string): Promise<void> => {
 // 차량 정보 가져오기
 export const getVehicle = async (): Promise<Vehicle | null> => {
   try {
-    console.log('[Storage] Loading vehicle from Supabase...');
     const { data, error } = await supabase
       .from('vehicles')
       .select('*')
@@ -122,14 +113,12 @@ export const getVehicle = async (): Promise<Vehicle | null> => {
     if (error) {
       if (error.code === 'PGRST116') {
         // No rows returned
-        console.log('[Storage] No vehicle found');
         return null;
       }
       console.error('[Storage] Error loading vehicle:', error);
       throw error;
     }
 
-    console.log('[Storage] Vehicle loaded successfully');
     return data ? transformVehicleFromDB(data) : null;
   } catch (e: any) {
     if (e.code === 'PGRST116') {
@@ -143,7 +132,6 @@ export const getVehicle = async (): Promise<Vehicle | null> => {
 // 차량 정보 저장하기
 export const saveVehicle = async (vehicle: Vehicle): Promise<void> => {
   try {
-    console.log('[Storage] Saving vehicle to Supabase...');
 
     // 현재 로그인한 사용자 ID 가져오기
     const { data: { user } } = await supabase.auth.getUser();
@@ -158,7 +146,6 @@ export const saveVehicle = async (vehicle: Vehicle): Promise<void> => {
 
     if (existing) {
       // 업데이트
-      console.log('[Storage] Updating existing vehicle');
       const { error } = await supabase
         .from('vehicles')
         .update(dbVehicle)
@@ -170,7 +157,6 @@ export const saveVehicle = async (vehicle: Vehicle): Promise<void> => {
       }
     } else {
       // 삽입 - user_id 추가!
-      console.log('[Storage] Inserting new vehicle for user:', user.id);
       const { error } = await supabase
         .from('vehicles')
         .insert([{
@@ -184,7 +170,6 @@ export const saveVehicle = async (vehicle: Vehicle): Promise<void> => {
       }
     }
 
-    console.log('[Storage] Vehicle saved successfully');
   } catch (e) {
     console.error('[Storage] Error saving vehicle:', e);
     throw e;
@@ -194,11 +179,9 @@ export const saveVehicle = async (vehicle: Vehicle): Promise<void> => {
 // 차량 정보 삭제하기
 export const deleteVehicle = async (): Promise<void> => {
   try {
-    console.log('[Storage] Deleting vehicle from Supabase...');
 
     const existing = await getVehicle();
     if (!existing) {
-      console.log('[Storage] No vehicle to delete');
       return;
     }
 
@@ -212,7 +195,6 @@ export const deleteVehicle = async (): Promise<void> => {
       throw error;
     }
 
-    console.log('[Storage] Vehicle deleted successfully');
   } catch (e) {
     console.error('[Storage] Error deleting vehicle:', e);
     throw e;

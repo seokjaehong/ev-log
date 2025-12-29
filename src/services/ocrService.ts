@@ -6,28 +6,14 @@ import { OCRResult } from '../types';
  * Tesseract.js 사용 (무료, 오프라인 가능, 클라이언트 측 실행)
  */
 export const performOCR = async (imageUri: string): Promise<OCRResult> => {
-  console.log('Tesseract.js OCR 시작...');
-
   let worker;
 
   try {
     // Tesseract worker 생성
-    worker = await createWorker('kor+eng', 1, {
-      logger: (m) => {
-        // 진행 상황 로그
-        if (m.status === 'recognizing text') {
-          console.log(`OCR 진행: ${Math.round(m.progress * 100)}%`);
-        }
-      },
-    });
-
-    console.log('Tesseract worker 초기화 완료');
+    worker = await createWorker('kor+eng', 1);
 
     // OCR 수행
     const { data } = await worker.recognize(imageUri);
-
-    console.log('OCR 완료 - 텍스트 길이:', data.text.length);
-    console.log('신뢰도:', data.confidence);
 
     const result: OCRResult = {
       fullText: data.text,
@@ -42,7 +28,6 @@ export const performOCR = async (imageUri: string): Promise<OCRResult> => {
     // Worker 종료
     if (worker) {
       await worker.terminate();
-      console.log('Tesseract worker 종료');
     }
   }
 };

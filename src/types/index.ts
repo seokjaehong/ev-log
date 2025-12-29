@@ -65,6 +65,27 @@ export interface ParsedReceipt {
   rawText: string;        // 원본 텍스트
 }
 
+// Vision AI 분석 결과
+export type ImageType = 'charger_screen' | 'vehicle_screen' | 'paper_receipt' | 'unknown';
+export type ChargingStatus = 'completed' | 'in_progress' | 'not_started' | 'unknown';
+
+export interface ChargeRecordAnalysis {
+  imageType: ImageType;           // 이미지 타입
+  isValid: boolean;               // 영수증으로 유효한가
+  chargingStatus: ChargingStatus; // 충전 상태
+  chargerType: ChargerType | 'unknown'; // 충전기 타입
+  location?: string;              // 충전소 위치
+  date?: string;                  // ISO 8601 format
+  chargeAmount?: number;          // 충전량 (kWh)
+  unitPrice?: number;             // 단가 (원/kWh)
+  totalCost?: number;             // 총 금액 (원)
+  batteryPercent?: number;        // 배터리 %
+  elapsedTime?: string;           // 경과 시간
+  remainingTime?: string;         // 남은 시간
+  reasoning: string;              // 분석 이유
+  confidence: number;             // 신뢰도 (0-1)
+}
+
 // Supabase 타입
 export type { User, Session } from '@supabase/supabase-js';
 
