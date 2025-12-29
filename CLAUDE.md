@@ -36,7 +36,28 @@ npm run deploy     # Vercel에 배포 (빌드 + 배포)
 - **출력 디렉토리**: `dist`
 - **배포 방법**: GitHub 연동 또는 Vercel CLI
 - **설정 파일**: `vercel.json`
-- **상세 가이드**: `DEPLOYMENT.md` 참조
+- **상세 가이드**: `docs/DEPLOYMENT.md` 참조
+
+## 프로젝트 구조
+
+```
+charge-paper/
+├── src/
+│   ├── screens/       # 화면 컴포넌트
+│   ├── components/    # 재사용 가능한 컴포넌트
+│   ├── contexts/      # Context API (테마 등)
+│   ├── services/      # 외부 서비스 (OCR 등)
+│   ├── utils/         # 유틸리티 함수
+│   └── types/         # TypeScript 타입 정의
+├── docs/              # 프로젝트 문서
+│   ├── DEPLOYMENT.md  # Vercel 배포 가이드
+│   ├── SETUP.md       # Supabase 설정 가이드
+│   └── TESTING.md     # 테스트 가이드
+├── assets/            # 이미지, 아이콘 등
+├── CLAUDE.md          # 이 파일 (AI 컨텍스트)
+├── README.md          # 프로젝트 소개
+└── ...
+```
 
 ## 아키텍처
 

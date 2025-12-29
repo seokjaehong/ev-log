@@ -1,15 +1,64 @@
-# Supabase 데이터베이스 설정 가이드
+# 프로젝트 설정 가이드
+
+EV LOG 프로젝트의 초기 설정 방법을 설명합니다.
+
+## 목차
+1. [로컬 개발 환경 설정](#로컬-개발-환경-설정)
+2. [Supabase 데이터베이스 설정](#supabase-데이터베이스-설정)
+3. [환경 변수 설정](#환경-변수-설정)
+4. [테스트](#테스트)
+5. [문제 해결](#문제-해결)
+
+## 로컬 개발 환경 설정
+
+### 1. 시스템 요구사항
+
+- **Node.js**: 18.x 이상
+- **npm**: 9.x 이상
+- **Git**: 2.x 이상
+
+### 2. 프로젝트 클론
+
+```bash
+git clone https://github.com/your-username/charge-paper.git
+cd charge-paper
+```
+
+### 3. 의존성 설치
+
+```bash
+npm install
+```
+
+### 4. 개발 서버 실행
+
+```bash
+# 개발 서버 시작 (플랫폼 선택 가능)
+npm start
+
+# 그 다음 키 입력:
+# - 'w' 웹 브라우저
+# - 'i' iOS 시뮬레이터
+# - 'a' Android 에뮬레이터
+
+# 또는 직접 플랫폼 지정
+npm run web      # 웹 브라우저
+npm run ios      # iOS 시뮬레이터
+npm run android  # Android 에뮬레이터
+```
+
+## Supabase 데이터베이스 설정
 
 코드 구현이 완료되었습니다! 이제 Supabase에서 데이터베이스 테이블과 테스트 사용자를 설정해야 합니다.
 
-## 1. Supabase SQL Editor 열기
+### 1. Supabase SQL Editor 열기
 
 1. https://app.supabase.com 접속
-2. 프로젝트 선택 (esxwwpgpruugurjvdets)
+2. 프로젝트 선택
 3. 왼쪽 메뉴에서 **SQL Editor** 클릭
 4. **New query** 클릭
 
-## 2. 데이터베이스 테이블 생성
+### 2. 데이터베이스 테이블 생성
 
 아래 SQL을 복사하여 SQL Editor에 붙여넣고 **Run** 클릭:
 
@@ -67,7 +116,7 @@ CREATE TRIGGER update_vehicles_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
-## 3. Row Level Security (RLS) 정책 설정
+### 3. Row Level Security (RLS) 정책 설정
 
 새 쿼리를 열고 아래 SQL을 실행 (**매우 중요!** - 유저별 데이터 격리):
 
@@ -113,16 +162,16 @@ CREATE POLICY "Users can delete own vehicles"
   USING (auth.uid() = user_id);
 ```
 
-## 4. 이메일 확인 비활성화
+### 4. 이메일 확인 비활성화
 
 1. 왼쪽 메뉴에서 **Authentication** > **Settings** 클릭
 2. **Email** 탭에서 스크롤 다운
 3. "Enable email confirmations" **체크 해제**
 4. **Save** 클릭
 
-## 5. 테스트 사용자 생성
+### 5. 테스트 사용자 생성
 
-### 방법 1: Supabase Dashboard (권장)
+#### 방법 1: Supabase Dashboard (권장)
 
 1. 왼쪽 메뉴에서 **Authentication** > **Users** 클릭
 2. **Add user** > **Create new user** 클릭
@@ -136,7 +185,7 @@ CREATE POLICY "Users can delete own vehicles"
    - Password: `password123`
    - **Auto Confirm User** 체크
 
-### 방법 2: SQL Editor
+#### 방법 2: SQL Editor
 
 ```sql
 -- 테스트 사용자 생성 (비밀번호는 자동으로 해시됨)
@@ -148,30 +197,76 @@ VALUES
 
 참고: 대시보드에서 생성하는 것이 더 간단하고 안전합니다.
 
-## 6. 설정 확인
+### 6. 설정 확인
 
-### 테이블 확인
+#### 테이블 확인
 1. **Table Editor** 메뉴 클릭
 2. `charge_records`와 `vehicles` 테이블이 보이는지 확인
 3. 각 테이블 열어서 컬럼 구조 확인
 
-### RLS 정책 확인
+#### RLS 정책 확인
 1. **Table Editor** > `charge_records` 테이블 선택
 2. 오른쪽 상단 **⚙️** 아이콘 클릭
 3. **Policies** 탭에서 4개의 정책 확인
 4. `vehicles` 테이블도 동일하게 확인
 
-### 사용자 확인
+#### 사용자 확인
 1. **Authentication** > **Users**
 2. 생성한 사용자 목록 확인
 
-## 7. 로컬 테스트 실행
+## 환경 변수 설정
 
-터미널에서:
+### 1. .env 파일 생성
+
+프로젝트 루트 디렉토리에 `.env` 파일을 생성합니다:
+
+```bash
+# Supabase 설정
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 2. Supabase 환경 변수 찾기
+
+1. https://app.supabase.com 접속
+2. 프로젝트 선택
+3. **Settings** → **API** 클릭
+4. **Project URL** 복사 → `EXPO_PUBLIC_SUPABASE_URL`
+5. **Project API keys** → **anon public** 복사 → `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+
+### 3. .env.example 확인
+
+`.env.example` 파일에는 실제 키가 없어야 합니다:
+
+```bash
+# .env.example
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 4. .gitignore 확인
+
+`.env` 파일이 Git에 커밋되지 않도록 `.gitignore`에 포함되어 있는지 확인:
+
+```gitignore
+# 환경 변수
+.env
+.env.local
+```
+
+### 5. Vercel 환경 변수 설정
+
+Vercel에 배포할 때는 Dashboard에서 환경 변수를 설정해야 합니다. 자세한 내용은 [배포 가이드](./DEPLOYMENT.md#환경-변수-설정-필수)를 참조하세요.
+
+## 테스트
+
+### 1. 로컬 개발 서버 실행
 
 ```bash
 npm run web
 ```
+
+### 2. 기능 테스트
 
 브라우저가 열리면:
 1. 로그인 화면이 나타남
@@ -180,6 +275,10 @@ npm run web
 4. 차량 등록 테스트
 5. 로그아웃 후 `user2@test.com`로 로그인
 6. User1의 데이터가 보이지 않는지 확인 (데이터 격리 테스트)
+
+### 3. 플랫폼별 테스트
+
+자세한 테스트 가이드는 [테스트 가이드](./TESTING.md)를 참조하세요.
 
 ## 문제 해결
 
@@ -200,11 +299,31 @@ npm run web
 - 사용자가 제대로 생성되었는지 확인
 - 브라우저 콘솔에서 에러 로그 확인
 
+### 환경 변수 로드 실패
+- `.env` 파일이 프로젝트 루트에 있는지 확인
+- 개발 서버를 재시작 (`Ctrl+C` 후 `npm start`)
+- 환경 변수명이 `EXPO_PUBLIC_` 접두사로 시작하는지 확인
+
+### Node.js 버전 문제
+```bash
+# Node.js 버전 확인
+node -v
+
+# nvm 사용 시 버전 변경
+nvm use 18
+```
+
 ## 다음 단계
 
 설정이 완료되면:
 1. ✅ 로컬 테스트 완료
-2. ✅ Vercel 환경 변수 설정
-3. ✅ 배포 및 프로덕션 테스트
+2. ✅ 기능 개발 및 수정
+3. ✅ Vercel 배포
 
-환경 변수 설정 방법은 DEPLOYMENT.md를 참조하세요!
+Vercel 배포 방법은 [배포 가이드](./DEPLOYMENT.md)를 참조하세요!
+
+## 참고 자료
+
+- [Supabase 공식 문서](https://supabase.com/docs)
+- [Expo 환경 변수 가이드](https://docs.expo.dev/guides/environment-variables/)
+- [React Native 개발 환경 설정](https://reactnative.dev/docs/environment-setup)

@@ -94,7 +94,7 @@ npm run build:web
 npm run deploy
 ```
 
-자세한 배포 가이드는 [DEPLOYMENT.md](./DEPLOYMENT.md)를 참조하세요.
+자세한 배포 가이드는 [배포 가이드](./docs/DEPLOYMENT.md)를 참조하세요.
 
 ## 프로젝트 구조
 
@@ -121,6 +121,10 @@ charge-paper/
 │   │   └── receiptParser.ts
 │   └── types/            # TypeScript 타입 정의
 │       └── index.ts
+├── docs/                 # 프로젝트 문서
+│   ├── DEPLOYMENT.md     # 배포 가이드
+│   ├── SETUP.md          # 프로젝트 설정 가이드
+│   └── TESTING.md        # 테스트 가이드
 ├── assets/               # 이미지, 아이콘 등
 ├── App.tsx               # 앱 엔트리 포인트
 ├── app.json              # Expo 설정
@@ -128,8 +132,7 @@ charge-paper/
 ├── tsconfig.json
 ├── vercel.json           # Vercel 배포 설정
 ├── CLAUDE.md             # AI 컨텍스트 가이드
-├── DEPLOYMENT.md         # 배포 가이드
-└── TESTING.md            # 테스트 가이드
+└── README.md             # 프로젝트 소개
 ```
 
 ## 데이터 저장
@@ -141,9 +144,14 @@ charge-paper/
 
 서버 없이 완전히 클라이언트 측에서 동작하여 개인정보를 보호합니다.
 
-## 테스트
+## 문서
 
-저장 기능 테스트 방법은 [TESTING.md](./TESTING.md)를 참조하세요.
+프로젝트와 관련된 상세한 문서는 `docs/` 폴더에서 확인할 수 있습니다:
+
+- **[배포 가이드](./docs/DEPLOYMENT.md)** - Vercel 배포 방법 및 체크리스트
+- **[프로젝트 설정 가이드](./docs/SETUP.md)** - Supabase 설정 및 환경 변수 설정
+- **[테스트 가이드](./docs/TESTING.md)** - 저장 기능 테스트 방법
+- **[AI 개발 가이드](./CLAUDE.md)** - Claude Code용 프로젝트 컨텍스트
 
 ## 브라우저 개발자 도구 활용
 
