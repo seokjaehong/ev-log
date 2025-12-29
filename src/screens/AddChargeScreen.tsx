@@ -110,28 +110,40 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      '삭제 확인',
-      '이 충전 기록을 삭제하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (editRecord) {
-                await deleteChargeRecord(editRecord.id);
-                navigation.goBack();
-              }
-            } catch (error) {
-              Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
-            }
+  const handleDelete = async () => {
+    const confirmDelete = async () => {
+      try {
+        if (editRecord) {
+          await deleteChargeRecord(editRecord.id);
+          navigation.goBack();
+        }
+      } catch (error) {
+        if (Platform.OS === 'web') {
+          window.alert('삭제 중 오류가 발생했습니다.');
+        } else {
+          Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('이 충전 기록을 삭제하시겠습니까?')) {
+        await confirmDelete();
+      }
+    } else {
+      Alert.alert(
+        '삭제 확인',
+        '이 충전 기록을 삭제하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '삭제',
+            style: 'destructive',
+            onPress: confirmDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
