@@ -20,6 +20,7 @@ interface LocationInputProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   records: ChargeRecord[]; // 충전 기록 (통계 계산용)
+  onDropdownToggle?: (isOpen: boolean) => void; // 드롭다운 열림/닫힘 콜백
 }
 
 export const LocationInput: React.FC<LocationInputProps> = ({
@@ -27,6 +28,7 @@ export const LocationInput: React.FC<LocationInputProps> = ({
   onChangeText,
   placeholder = '충전소 위치',
   records,
+  onDropdownToggle,
 }) => {
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -63,6 +65,11 @@ export const LocationInput: React.FC<LocationInputProps> = ({
       setShowSuggestions(filtered.length > 0);
     }
   }, [value, isFocused, favorites, recents]);
+
+  // 드롭다운 열림/닫힘 상태 알림
+  useEffect(() => {
+    onDropdownToggle?.(showSuggestions);
+  }, [showSuggestions, onDropdownToggle]);
 
   const handleFocus = () => {
     setIsFocused(true);

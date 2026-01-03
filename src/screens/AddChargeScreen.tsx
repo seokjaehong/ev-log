@@ -76,6 +76,8 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
 
   // 충전소 즐겨찾기용 전체 기록
   const [allRecords, setAllRecords] = useState<ChargeRecord[]>([]);
+  // 드롭다운 열림 상태
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const totalCost = Math.round(chargeAmount * unitPrice);
   const styles = createStyles(colors);
@@ -505,13 +507,14 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
         </View>
 
         {/* 장소 */}
-        <View style={styles.section}>
+        <View style={[styles.section, isDropdownOpen && styles.sectionWithDropdown]}>
           <Text style={styles.label}>장소</Text>
           <LocationInput
             value={location}
             onChangeText={setLocation}
             placeholder="예: 슈퍼차저 성수"
             records={allRecords}
+            onDropdownToggle={setIsDropdownOpen}
           />
         </View>
 
@@ -748,6 +751,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+  },
+  sectionWithDropdown: {
+    marginBottom: 320, // 드롭다운 높이만큼 여백 추가
   },
   scanButton: {
     flexDirection: 'row',
