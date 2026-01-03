@@ -121,6 +121,25 @@ export interface DetailedStats {
   totalChargeAmount: number; // kWh
 }
 
+// 충전소 즐겨찾기 타입
+export interface LocationStats {
+  location: string;           // 충전소 이름
+  visitCount: number;         // 방문 횟수
+  averageUnitPrice: number;   // 평균 단가 (원/kWh)
+  lastVisit: string;          // 마지막 방문 날짜 (ISO 8601)
+  isFavorite: boolean;        // 즐겨찾기 여부 (3회 이상)
+  totalCost: number;          // 총 충전 비용
+  totalCharge: number;        // 총 충전량 (kWh)
+}
+
+export interface FavoriteLocation {
+  location: string;
+  visitCount: number;
+  averageUnitPrice: number;
+  lastVisit: string;
+  daysSinceLastVisit: number;
+}
+
 // 네비게이션 파라미터 타입
 export type RootStackParamList = {
   Login: undefined;

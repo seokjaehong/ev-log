@@ -16,18 +16,20 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList, ChargerType, ThemeColors, ParsedReceipt, ChargeRecordAnalysis } from '../types';
+import { RootStackParamList, ChargerType, ThemeColors, ParsedReceipt, ChargeRecordAnalysis, ChargeRecord } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import {
   saveChargeRecord,
   deleteChargeRecord,
   generateId,
+  getChargeRecords,
 } from '../utils/storage';
 import { pickImageFromCamera, pickImageFromLibrary } from '../utils/imagePickerUtils';
 import { performOCR } from '../services/ocrService';
 import { parseReceipt } from '../utils/receiptParser';
 import { analyzeChargingReceipt } from '../services/visionService';
 import { ScanResultModal } from '../components/ScanResultModal';
+import { LocationInput } from '../components/LocationInput';
 
 type AddChargeScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -72,8 +74,20 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
   const [parsedData, setParsedData] = useState<ParsedReceipt | null>(null);
   const [visionAnalysis, setVisionAnalysis] = useState<ChargeRecordAnalysis | null>(null);
 
+  // 충전소 즐겨찾기용 전체 기록
+  const [allRecords, setAllRecords] = useState<ChargeRecord[]>([]);
+
   const totalCost = Math.round(chargeAmount * unitPrice);
   const styles = createStyles(colors);
+
+  // 컴포넌트 마운트 시 전체 충전 기록 로드
+  useEffect(() => {
+    const loadRecords = async () => {
+      const records = await getChargeRecords();
+      setAllRecords(records);
+    };
+    loadRecords();
+  }, []);
 
   const handleSave = async () => {
     if (!location.trim()) {
@@ -493,12 +507,11 @@ export const AddChargeScreen: React.FC<AddChargeScreenProps> = ({
         {/* 장소 */}
         <View style={styles.section}>
           <Text style={styles.label}>장소</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="예: 슈퍼차저 성수"
-            placeholderTextColor={colors.textTertiary}
+          <LocationInput
             value={location}
             onChangeText={setLocation}
+            placeholder="예: 슈퍼차저 성수"
+            records={allRecords}
           />
         </View>
 

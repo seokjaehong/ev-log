@@ -134,7 +134,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <View style={styles.content}>
               <MonthlySummary summary={summary} />
 
-              {summary.totalRecords === 0 && (
+              {summary.chargeCount === 0 && (
                 <View style={styles.infoCard}>
                   <Text style={styles.infoIcon}>ℹ️</Text>
                   <Text style={styles.infoText}>
