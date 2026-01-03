@@ -15,10 +15,13 @@ import { RootStackParamList, ChargeRecord, ThemeColors } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { MonthlySummary } from '../components/MonthlySummary';
 import { ChargeListItem } from '../components/ChargeListItem';
+import { StatisticsContent } from '../components/statistics/StatisticsContent';
 import {
   getChargeRecords,
   calculateMonthlySummary,
 } from '../utils/storage';
+
+type TabType = 'records' | 'statistics';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -33,6 +36,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const [records, setRecords] = useState<ChargeRecord[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTab, setSelectedTab] = useState<TabType>('records');
 
   const loadRecords = async () => {
     try {
@@ -101,38 +105,65 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
       </View>
 
-      <FlatList
-        data={records}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <View style={styles.content}>
-            <MonthlySummary summary={summary} />
+      {/* 탭 선택기 */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === 'records' && styles.activeTab]}
+          onPress={() => setSelectedTab('records')}
+        >
+          <Text style={[styles.tabText, selectedTab === 'records' && styles.activeTabText]}>
+            📋 기록
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === 'statistics' && styles.activeTab]}
+          onPress={() => setSelectedTab('statistics')}
+        >
+          <Text style={[styles.tabText, selectedTab === 'statistics' && styles.activeTabText]}>
+            📊 통계
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-            <View style={styles.infoCard}>
-              <Text style={styles.infoIcon}>ℹ️</Text>
-              <Text style={styles.infoText}>
-                이번 달의 충전 기록이 없습니다. 우측의{'\n'}
-                '기록하기' 버튼을 눌러서 첫 충전 기록을{'\n'}
-                입력해보세요!
-              </Text>
+      {/* 탭 콘텐츠 */}
+      {selectedTab === 'records' ? (
+        <FlatList
+          data={records}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={
+            <View style={styles.content}>
+              <MonthlySummary summary={summary} />
+
+              {summary.totalRecords === 0 && (
+                <View style={styles.infoCard}>
+                  <Text style={styles.infoIcon}>ℹ️</Text>
+                  <Text style={styles.infoText}>
+                    이번 달의 충전 기록이 없습니다. 우측의{'\n'}
+                    '기록하기' 버튼을 눌러서 첫 충전 기록을{'\n'}
+                    입력해보세요!
+                  </Text>
+                </View>
+              )}
+
+              {records.length > 0 && (
+                <Text style={styles.sectionTitle}>충전 기록</Text>
+              )}
             </View>
-
-            {records.length > 0 && (
-              <Text style={styles.sectionTitle}>충전 기록</Text>
-            )}
-          </View>
-        }
-        renderItem={({ item }) => (
-          <ChargeListItem
-            record={item}
-            onPress={() => handleRecordPress(item)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      />
+          }
+          renderItem={({ item }) => (
+            <ChargeListItem
+              record={item}
+              onPress={() => handleRecordPress(item)}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
+      ) : (
+        <StatisticsContent records={records} />
+      )}
     </SafeAreaView>
   );
 };
@@ -184,6 +215,32 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   settingsIcon: {
     fontSize: 24,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 12,
+    borderRadius: 10,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: colors.primary,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  activeTabText: {
+    color: '#ffffff',
   },
   content: {
     paddingHorizontal: 20,

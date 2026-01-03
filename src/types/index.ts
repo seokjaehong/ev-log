@@ -89,9 +89,42 @@ export interface ChargeRecordAnalysis {
 // Supabase 타입
 export type { User, Session } from '@supabase/supabase-js';
 
+// 차트 데이터 타입
+export interface MonthlyTrendData {
+  month: string;      // '2024-01'
+  monthLabel: string; // '1월'
+  totalCost: number;
+  totalCharge: number; // kWh
+  chargeCount: number;
+}
+
+export interface ChargerTypeDistribution {
+  type: ChargerType;
+  count: number;
+  percentage: number;
+  color: string;
+}
+
+export interface WeekdayPatternData {
+  weekday: number;      // 0-6 (일-토)
+  weekdayLabel: string; // '월', '화', ...
+  averageCount: number;
+  totalCount: number;
+}
+
+export interface DetailedStats {
+  totalChargeCount: number;
+  averageChargeCost: number;
+  mostUsedLocation: string;
+  monthlyAverageCost: number;
+  totalSpent: number;
+  totalChargeAmount: number; // kWh
+}
+
 // 네비게이션 파라미터 타입
 export type RootStackParamList = {
   Login: undefined;
+  SignUp: undefined;
   Home: undefined;
   AddCharge: { editRecord?: ChargeRecord };
   Settings: undefined;

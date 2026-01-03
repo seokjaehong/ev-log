@@ -9,17 +9,26 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { ThemeColors } from '../types';
+import { ThemeColors, RootStackParamList } from '../types';
+import { PasswordResetModal } from '../components/PasswordResetModal';
 
-export const LoginScreen: React.FC = () => {
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
+
+interface LoginScreenProps {
+  navigation: LoginScreenNavigationProp;
+}
+
+export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   const handleLogin = async () => {
     // 유효성 검사
@@ -129,15 +138,33 @@ export const LoginScreen: React.FC = () => {
             )}
           </TouchableOpacity>
 
-          {/* 안내 메시지 */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoText}>
-              계정은 관리자에 의해 생성됩니다.{'\n'}
-              계정이 없다면 관리자에게 문의하세요.
-            </Text>
+          {/* 비밀번호 찾기 */}
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => setShowPasswordReset(true)}
+            disabled={loading}
+          >
+            <Text style={styles.forgotPasswordText}>비밀번호를 잊으셨나요?</Text>
+          </TouchableOpacity>
+
+          {/* 회원가입 링크 */}
+          <View style={styles.signUpLinkContainer}>
+            <Text style={styles.signUpLinkText}>아직 계정이 없으신가요? </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('SignUp')}
+              disabled={loading}
+            >
+              <Text style={styles.signUpLink}>회원가입</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
+
+      {/* 비밀번호 재설정 모달 */}
+      <PasswordResetModal
+        visible={showPasswordReset}
+        onClose={() => setShowPasswordReset(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -225,16 +252,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  infoContainer: {
+  forgotPasswordButton: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  signUpLinkContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  infoText: {
-    fontSize: 12,
+  signUpLinkText: {
+    fontSize: 14,
     color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
+  },
+  signUpLink: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
   },
 });

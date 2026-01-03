@@ -8,6 +8,8 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -91,10 +93,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // 회원가입
+  const signUp = async (email: string, password: string) => {
+    try {
+      console.log('[AuthContext] Signing up...');
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('[AuthContext] Sign up error:', error);
+        throw error;
+      }
+
+      console.log('[AuthContext] Sign up successful');
+
+      // 이메일 확인 비활성화된 경우 자동 로그인
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+      }
+      // 이메일 확인 활성화된 경우: 사용자에게 이메일 확인 안내
+    } catch (error) {
+      console.error('[AuthContext] Sign up failed:', error);
+      throw error;
+    }
+  };
+
+  // 비밀번호 재설정
+  const resetPassword = async (email: string) => {
+    try {
+      console.log('[AuthContext] Resetting password for:', email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        console.error('[AuthContext] Reset password error:', error);
+        throw error;
+      }
+
+      console.log('[AuthContext] Password reset email sent');
+    } catch (error) {
+      console.error('[AuthContext] Reset password failed:', error);
+      throw error;
+    }
+  };
+
   const isAuthenticated = !!session && !!user;
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, signUp, resetPassword, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

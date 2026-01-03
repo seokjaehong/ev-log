@@ -10,6 +10,7 @@ import { AddChargeScreen } from './src/screens/AddChargeScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { VehicleSettingsScreen } from './src/screens/VehicleSettingsScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { SignUpScreen } from './src/screens/SignUpScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -37,7 +38,10 @@ const AppNavigator = () => {
           <Stack.Screen name="VehicleSettings" component={VehicleSettingsScreen} />
         </>
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+        </>
       )}
     </Stack.Navigator>
   );
