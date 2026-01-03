@@ -4,10 +4,8 @@ import { ChargerTypeDistribution, ThemeColors } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ChartErrorBoundary } from './ErrorBoundary';
 
-// 플랫폼별 조건부 import
-const PieChart = Platform.OS === 'web'
-  ? require('react-gifted-charts').PieChart
-  : require('react-native-gifted-charts').PieChart;
+// react-native-gifted-charts는 웹에서도 작동합니다
+import { PieChart } from 'react-native-gifted-charts';
 
 interface ChargerTypeChartProps {
   data: ChargerTypeDistribution[];

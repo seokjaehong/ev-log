@@ -4,10 +4,8 @@ import { WeekdayPatternData, ThemeColors } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ChartErrorBoundary } from './ErrorBoundary';
 
-// 플랫폼별 조건부 import
-const BarChart = Platform.OS === 'web'
-  ? require('react-gifted-charts').BarChart
-  : require('react-native-gifted-charts').BarChart;
+// react-native-gifted-charts는 웹에서도 작동합니다
+import { BarChart } from 'react-native-gifted-charts';
 
 interface WeekdayPatternChartProps {
   data: WeekdayPatternData[];
